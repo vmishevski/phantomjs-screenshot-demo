@@ -1,42 +1,45 @@
-//var system = require('system');
-//var commanArguments = system.args;
-//
-//if(commanArguments.length !== 2 || (commanArguments[1] != 'audit' && commanArguments[1] != 'action')){
-//    throw new Error('should pass reportType("action"/"audit") as second command line parameter');
-//}
+var system = require('system');
+var commandArguments = system.args;
+
+if(commandArguments.length !== 4 ||
+    (commandArguments[2] != 'audit' && commandArguments[2] != 'action')){
+    console.log('Usage: phantomjs index.js url reportType folderToSaveImages')
+}
+
 var page = require('webpage').create();
+var reportType = commandArguments[2];
+var folder = commandArguments[3];
+var url = commandArguments[1];
 
-var reportType = 'action';
-
-page.open('http://localhost:9000/#/analytics/4/' + reportType, function (status) {
+page.open(url, function (status) {
     if (status !== 'success') {
-        console.log('Unable to load the address!');
+        console.log('Unable to load ', + url);
+        phantom.exit();
     }
     else {
-
-        page.evaluate(function () {
-            return document.querySelector('#donor-retention');
-        }, function (element, a, b) {
-            var bound = element.getBoundingClientRect();
-            console.log(bound, a, b);
-            ph.exit();
-        });
-
         setTimeout(function () {
             function printPage(selector, pageNumber) {
-                var elementBounds = page.evaluate(function (selector) {
-                    var clipRect = document.querySelector(selector).getBoundingClientRect();
-                    return {
-                        top: clipRect.top,
-                        left: clipRect.left,
-                        width: clipRect.width,
-                        height: clipRect.height
-                    };
-                }, selector);
-                var oldClipRect = page.clipRect;
-                page.clipRect = elementBounds;
-                page.render('temp/' + reportType + '/' + pageNumber + '.png');
-                page.clipRect = oldClipRect;  // Restore the page's clipRect
+                try{
+                    var elementBounds = page.evaluate(function (selector) {
+
+                        var clipRect = document.querySelector(selector).getBoundingClientRect();
+                        return {
+                            top: clipRect.top,
+                            left: clipRect.left,
+                            width: clipRect.width,
+                            height: clipRect.height
+                        };
+
+                    }, selector);
+                    var oldClipRect = page.clipRect;
+                    page.clipRect = elementBounds;
+                    page.render(folder + pageNumber + '.png');
+                    page.clipRect = oldClipRect;  // Restore the page's clipRect
+                }
+                catch(e){
+                    console.log(e);
+                    phantom.exit();
+                }
             }
 
             if (reportType === 'audit') {
